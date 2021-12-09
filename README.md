@@ -16,10 +16,10 @@ Implement User-based / Item-based top-N recommendation Collaborative Filtering.
     if the rating is non-zero, then we get the user-item rating prediction.
     ```
 
-I need a KNN algorithm that's sufficient to find top k similar neighbor
-the straightforward approach is to do the full search, 
-it might be ok since the matrix would be a sparse matrix
-if not so, consider some approx. approach like LSH to find near optimal solution
+It needs a KNN algorithm that's sufficient to find top k similar neighbor <br>
+the straightforward approach is to do the full search, <br>
+it might be ok since the matrix would be a sparse matrix <br>
+if not so, consider some approx. approach like LSH to find near optimal solution <br>
 
 Finally, we return top n ratings that are not yet rated by the given user u / item i,
 as the recommendation.
@@ -33,7 +33,7 @@ be whatever it might be, like movie, book, music...
 
 System architecture
 ===================
-    LSH(user_id, input_file, k): return user_ids (k nearest neighbor)
+    KNN(user_id, input_file, k): return user_ids (k nearest neighbor)
 
     recommend(user_ids, input_file, output_file, k): write recommendations to the output_file
         aggregate result from LSH with user-item matrix
@@ -42,8 +42,7 @@ user_ids: It can receive multiple users at once.
 
 input_file: each row contains user_id, item_id, rating.
 
-output_file: write the recommendations for each users to here.
-
+output_file: write the recommendations for each user to here.
 
 API description
 ================
@@ -58,7 +57,7 @@ Engineering infrastructure
 ===========================
 
 * build system
-    * make
+    * cmake
 
 * testing framework
     * c++: GoogleTest
@@ -68,23 +67,21 @@ Engineering infrastructure
 Schedule
 =========
 week1:
-prototype on C++
+prototype on C++ / find data
 
 week2:
-prototype on C++
-implement LSH
+read data in / repr as an appropriate DS
 
 week3:
-implement LSH
+implement & check whether naive KNN is fast enough
 
 week4:
-implement LSH
+aggregate result from KNN with user-item matrix to recommend
 
 week5:
-aggregate result from LSH with user-item matrix to recommend
+buffer time
 
 week6:
-aggregate result from LSH with user-item matrix to recommend
 python11 python API
 
 week7:
