@@ -3,7 +3,12 @@ build/
 
 # Google Tests
 tests/lib/
+Testing/
 
 # Jet Brains
 .idea/
 cmake-build-debug/
+
+create_project.sh
+LICENSE
+new_cpp_project.sh
