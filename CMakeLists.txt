@@ -1,12 +1,15 @@
 cmake_minimum_required(VERSION 3.9)
-project(MyProject)
+project(recommender_system)
 
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES main.cpp)
+add_compile_options(-D NDEBUG)
 add_executable(${CMAKE_PROJECT_NAME}_run ${SOURCE_FILES})
 
 include_directories(src)
+include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include)
+include_directories(/opt/homebrew/Cellar/boost/1.76.0/include)
 
 add_subdirectory(src)
 add_subdirectory(tests)
@@ -27,7 +30,7 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
-    message("Doxygen buld started")
+    message("Doxygen build started")
     add_custom_target(Doxygen ALL
             COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
