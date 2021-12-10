@@ -100,8 +100,8 @@ void CF::filter_rare_scoring() {
 }
 
 double CF::predict_ui_rating(const std::string &ui, int idx, const IDX_SCORE_VEC & idx_score, bool ret_avg) {
-    double ws = 0.0, k = 0.0;  // normalization
     SV vec;
+    double ws = 0.0, k = 0.0;  // normalization
     if(ui == "user") {
         vec = UIMAT_Col.col(idx);
     } else {
@@ -141,12 +141,15 @@ IDX_SCORE_VEC CF::recommended_items_for_user(int user_id, int k, double simi_th,
         }
     }
     size_t num_non_zero = weighted_sum.nonZeros();
-    IDX_SCORE_VEC itemID_score(num_non_zero);
-    for(int i=0; i<num_non_zero; ++i) {
+    int rec_to_keep = std::min(n, (int)num_non_zero);
+    IDX_SCORE_VEC itemID_score(rec_to_keep);
+    for(int i=0; i<rec_to_keep; ++i) {
         itemID_score.emplace(itemID_score.begin(), *(weighted_sum.innerIndexPtr()+i), *(weighted_sum.valuePtr()+i));
     }
+    itemID_score.resize(rec_to_keep);
+//    itemID_score.shrink_to_fit();
     std::sort(itemID_score.begin(), itemID_score.end(), comp_fn);
-    itemID_score.resize(std::min(n, (int)itemID_score.size()));
+
 
     elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
 
@@ -176,12 +179,14 @@ IDX_SCORE_VEC CF::recommended_users_for_item(int item_id, int k, double simi_th,
         }
     }
     size_t num_non_zero = weighted_sum.nonZeros();
-    IDX_SCORE_VEC userID_score(num_non_zero);
-    for(int i=0; i<num_non_zero; ++i) {
+    int rec_to_keep = std::min(n, (int)num_non_zero);
+    IDX_SCORE_VEC userID_score(rec_to_keep);
+    for(int i=0; i<rec_to_keep; ++i) {
         userID_score.emplace(userID_score.begin(), *(weighted_sum.innerIndexPtr()+i), *(weighted_sum.valuePtr()+i));
     }
+    userID_score.resize(rec_to_keep);
+//    userID_score.shrink_to_fit();
     std::sort(userID_score.begin(), userID_score.end(), comp_fn);
-    userID_score.resize(std::min(n, (int)userID_score.size()));
 
     elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
 

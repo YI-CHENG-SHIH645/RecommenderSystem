@@ -1,6 +1,7 @@
 #include <random>
 #include "gtest/gtest.h"
 #include "KNN.h"
+#include "CF.h"
 
 SP_ROW make_matrix() {
     SP_ROW sp_mat(8, 8);
@@ -63,7 +64,7 @@ SP_ROW make_matrix() {
     return sp_mat;
 }
 
-TEST(CFTest, naive_kNearest) {
+TEST(CFTest, naive_kNearest_user) {
     SP_ROW sp_mat = make_matrix();
     IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
@@ -76,5 +77,27 @@ TEST(CFTest, naive_kNearest) {
 
     EXPECT_EQ(result[2].first, 5);
     EXPECT_NEAR(result[2].second, 0.683999, 1e-6);
+}
+
+TEST(CFTest, recommended_items_for_user) {
+    CF cf(make_matrix());
+    IDX_SCORE_VEC result = cf.recommended_items_for_user(0, 3, 0.5);
+    EXPECT_EQ(result.size(), 3);
+
+    EXPECT_EQ(result[0].first, 6);
+    EXPECT_NEAR(result[0].second, 4.43809, 1e-5);
+
+    EXPECT_EQ(result[1].first, 4);
+    EXPECT_NEAR(result[1].second, 2.95601, 1e-5);
+
+    EXPECT_EQ(result[2].first, 2);
+    EXPECT_NEAR(result[2].second, 2, 1e-5);
+}
+
+TEST(CFTest, naive_kNearest_item) {
+
+}
+
+TEST(CFTest, recommended_users_for_item) {
 
 }
