@@ -14,7 +14,7 @@ public:
     explicit CF(const std::string & file_path) {
         UIMAT_Col = get_UIMAT(file_path);
         UIMAT_Row = SP_ROW(UIMAT_Col);
-        filter_rare_scoring();
+//        filter_rare_scoring();
     };
 
     explicit CF(const SP_COL & MAT) {
