@@ -4,10 +4,11 @@
 #include <boost/algorithm/string/replace.hpp>
 #include "CF.h"
 #include "StopWatch.h"
+#include "KNN.h"
 
 auto comp_fn = [](const auto & a, const auto & b){ return a.second == b.second ? a.first < b.first : a.second > b.second;};
 
-SP_COL CF::get_UIMAT(const std::string & file_path) {
+SP_COL get_UIMAT(const std::string & file_path) {
 
     std::ifstream fin(file_path);
     if(fin.fail()) {
@@ -98,94 +99,6 @@ void CF::filter_rare_scoring() {
     std::cout << "# non zero element: " << UIMAT_Col.nonZeros() << '\n' << std::endl;
 }
 
-IDX_SCORE_VEC CF::calculate_simi(const std::string & ui, int idx, double simi_th, int vec_test_start, int mat_test_start) {
-    // return vec of non-zero simi -> idx : simi
-    SV vec, tgt_row;
-    IDX_SCORE_VEC simi;
-    long max_idx;
-    if(ui == "user") {
-        tgt_row = UIMAT_Row.row(idx);
-        max_idx = UIMAT_Row.outerSize();
-    } else {
-        tgt_row = UIMAT_Col.col(idx);
-        max_idx = UIMAT_Col.outerSize();
-    }
-    if(vec_test_start > -1) {
-        for(int i=vec_test_start; i<tgt_row.size(); ++i) {
-            if(tgt_row.coeffRef(i) != 0)
-                tgt_row.coeffRef(i) = 0;
-        }
-    }
-
-    double sqrt_bright = sqrt(tgt_row.cwiseProduct(tgt_row).sum());
-    for(int j=0; j<max_idx; ++j) {
-        if(j==idx) continue;
-        if(vec_test_start>-1 && j>=mat_test_start) break;
-        if(ui == "user") vec = UIMAT_Row.row(j);
-        else             vec = UIMAT_Col.col(j);
-        double top = tgt_row.cwiseProduct(vec).sum();
-        if(top != 0) {
-            double sqrt_bleft = vec.cwiseProduct(vec).sum();
-            double s = top / (sqrt_bleft * sqrt_bright);
-            if(s >= simi_th)
-                simi.emplace_back(std::make_pair(j, s));
-        }
-    }
-
-    return simi;
-}
-
-IDX_SCORE_VEC CF::naive_kNearest_user(int user, int k, double simi_th) {
-
-    StopWatch sw; double elapsed;
-
-    std::cout << "\n  calculate top k similar users ... ";  sw.lap();
-
-    IDX_SCORE_VEC simi = calculate_simi("user", user, simi_th);
-    std::sort(simi.begin(), simi.end(), comp_fn);
-    simi.resize(std::min(k, (int)simi.size()));
-
-    elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
-
-    return simi;
-}
-
-IDX_SCORE_VEC CF::naive_kNearest_item(int item, int k, double simi_th) {
-
-    StopWatch sw; double elapsed;
-
-    std::cout << "\n  calculate top k similar items ... ";  sw.lap();
-
-    IDX_SCORE_VEC simi = calculate_simi("item", item, simi_th);
-    std::sort(simi.begin(), simi.end(), comp_fn);
-    simi.resize(std::min(k, (int)simi.size()));
-
-    elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
-
-    return simi;
-}
-
-SV CF::calculate_weighted_sum(const std::string & ui, const IDX_SCORE_VEC & idx_score) {
-    SV vec, weighted_sum;
-    if(ui == "user") weighted_sum = SV(UIMAT_Row.cols());
-    else             weighted_sum = SV(UIMAT_Col.rows());
-    double k = 0;  //normalization
-    for(auto idx_simi : idx_score)
-        k += abs(idx_simi.second);
-    for(auto idx_simi : idx_score) {
-        if(ui == "user") vec = UIMAT_Row.row(idx_simi.first);
-        else             vec = UIMAT_Col.col(idx_simi.first);
-        for(size_t i=0; i<vec.nonZeros(); ++i) {
-            long idx = *(vec.innerIndexPtr()+i);
-            double val = *(vec.valuePtr()+i);
-            weighted_sum.coeffRef(idx) += idx_simi.second * val;
-        }
-    }
-    for(size_t i=0; i<weighted_sum.nonZeros(); ++i)
-        *(weighted_sum.valuePtr()+i) /= k;
-    return weighted_sum;
-}
-
 double CF::predict_ui_rating(const std::string &ui, int idx, const IDX_SCORE_VEC & idx_score, bool ret_avg) {
     double ws = 0.0, k = 0.0;  // normalization
     SV vec;
@@ -215,7 +128,7 @@ IDX_SCORE_VEC CF::recommended_items_for_user(int user_id, int k, double simi_th,
     StopWatch sw; double elapsed;
 
     std::cout << "calculate weighted sum of top k item vectors ... ";  sw.lap();
-    IDX_SCORE_VEC sorted_user_simi = naive_kNearest_user(user_id, k, simi_th);
+    IDX_SCORE_VEC sorted_user_simi = KNN<SP_ROW>::naive_kNearest(UIMAT_Row, user_id, k, simi_th);
 //    SV weighted_sum = calculate_weighted_sum("user", sorted_user_simi);
     SV weighted_sum(UIMAT_Row.cols());
     SV tgt_row = UIMAT_Row.row(user_id);
@@ -250,7 +163,7 @@ IDX_SCORE_VEC CF::recommended_users_for_item(int item_id, int k, double simi_th,
     StopWatch sw; double elapsed;
 
     std::cout << "calculate weighted sum of top k user vectors ... ";  sw.lap();
-    IDX_SCORE_VEC sorted_item_simi = naive_kNearest_item(item_id, k, simi_th);
+    IDX_SCORE_VEC sorted_item_simi = KNN<SP_COL>::naive_kNearest(UIMAT_Col, item_id, k, simi_th);
 //    SV weighted_sum = calculate_weighted_sum("item", sorted_item_simi);
     SV weighted_sum(UIMAT_Col.rows());
     SV tgt_col = UIMAT_Col.col(item_id);
@@ -280,35 +193,35 @@ IDX_SCORE_VEC CF::recommended_users_for_item(int item_id, int k, double simi_th,
     return userID_score;
 }
 
-void CF::test_rmse(const std::string & method) {
-    long u_size = (long)((float)UIMAT_Row.rows() * test_u_size);
-    long i_size = (long)((float)UIMAT_Row.cols() * test_i_size);
-    SP_ROW test_Row_Block = UIMAT_Row.bottomRightCorner(u_size, i_size);
-    SP_COL test_Col_Block = UIMAT_Col.bottomRightCorner(u_size, i_size);
-    long u_start = UIMAT_Row.rows() - u_size;
-    long i_start = UIMAT_Row.cols() - i_size;
-
-    IDX_SCORE_VEC simi;  SV ws, test_Row_Block_row;
-    double squared_error = 0.0, rmse;
-    for(long u=u_start; u<UIMAT_Row.rows(); ++u) {
-        if(!UIMAT_Row.row(u).nonZeros()) continue;
-        std::cout << u << std::endl;
-        simi = calculate_simi("user", (int)u, 0.01, (int)i_start, (int)u_start);
-        ws = calculate_weighted_sum("user", simi);
-        test_Row_Block_row = test_Row_Block.row(u-u_start);
-        for(int i=0; i<test_Row_Block_row.nonZeros(); ++i) {
-            int idx = *(test_Row_Block_row.innerIndexPtr()+i);
-            std::cout << " " << idx << " " << *(test_Row_Block_row.valuePtr() + i) << " " << ws.coeff(idx + i_start) <<std::endl;
-            if(ws.coeff(idx + i_start) != 0) {
-                std::cout << "y_true : " << *(test_Row_Block_row.valuePtr() + i) << std::endl;
-                std::cout << "y_pred : " << ws.coeff(idx + i_start) << std::endl;
-                std::cout << "(a-b)2 : " << pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2) << std::endl;
-                squared_error += pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2);
-                std::cout << "(a-b)2 : " << squared_error << std::endl;
-                exit(0);
-            }
-        }
-    }
-    rmse = sqrt(squared_error/(double)test_Row_Block.nonZeros());
-    std::cout << "rmse : " << rmse << std::endl;
-}
+//void CF::test_rmse(const std::string & method) {
+//    long u_size = (long)((float)UIMAT_Row.rows() * test_u_size);
+//    long i_size = (long)((float)UIMAT_Row.cols() * test_i_size);
+//    SP_ROW test_Row_Block = UIMAT_Row.bottomRightCorner(u_size, i_size);
+//    SP_COL test_Col_Block = UIMAT_Col.bottomRightCorner(u_size, i_size);
+//    long u_start = UIMAT_Row.rows() - u_size;
+//    long i_start = UIMAT_Row.cols() - i_size;
+//
+//    IDX_SCORE_VEC simi;  SV ws, test_Row_Block_row;
+//    double squared_error = 0.0, rmse;
+//    for(long u=u_start; u<UIMAT_Row.rows(); ++u) {
+//        if(!UIMAT_Row.row(u).nonZeros()) continue;
+//        std::cout << u << std::endl;
+//        simi = calculate_simi("user", (int)u, 0.01, (int)i_start, (int)u_start);
+//        ws = calculate_weighted_sum("user", simi);
+//        test_Row_Block_row = test_Row_Block.row(u-u_start);
+//        for(int i=0; i<test_Row_Block_row.nonZeros(); ++i) {
+//            int idx = *(test_Row_Block_row.innerIndexPtr()+i);
+//            std::cout << " " << idx << " " << *(test_Row_Block_row.valuePtr() + i) << " " << ws.coeff(idx + i_start) <<std::endl;
+//            if(ws.coeff(idx + i_start) != 0) {
+//                std::cout << "y_true : " << *(test_Row_Block_row.valuePtr() + i) << std::endl;
+//                std::cout << "y_pred : " << ws.coeff(idx + i_start) << std::endl;
+//                std::cout << "(a-b)2 : " << pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2) << std::endl;
+//                squared_error += pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2);
+//                std::cout << "(a-b)2 : " << squared_error << std::endl;
+//                exit(0);
+//            }
+//        }
+//    }
+//    rmse = sqrt(squared_error/(double)test_Row_Block.nonZeros());
+//    std::cout << "rmse : " << rmse << std::endl;
+//}

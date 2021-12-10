@@ -3,9 +3,11 @@ project(${CMAKE_PROJECT_NAME}_lib)
 set(HEADER_FILES
         StopWatch.h
         CF.h
+        KNN.h
 )
 set(SOURCE_FILES
         CF.cpp
+        KNN.cpp
 )
 
 if (DEFINED SOURCE_FILES)
