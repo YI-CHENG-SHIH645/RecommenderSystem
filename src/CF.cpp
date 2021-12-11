@@ -99,10 +99,11 @@ void CF::filter_rare_scoring() {
     std::cout << "# non zero element: " << UIMAT_Col.nonZeros() << '\n' << std::endl;
 }
 
-double CF::predict_ui_rating(const std::string &ui, int idx, const IDX_SCORE_VEC & idx_score, bool ret_avg) {
+template<typename SP>
+double CF::predict_ui_rating(int idx, const IDX_SCORE_VEC & idx_score, bool ret_avg) {
     SV vec;
     double ws = 0.0, k = 0.0;  // normalization
-    if(ui == "user") {
+    if(SP::IsRowMajor) {
         vec = UIMAT_Col.col(idx);
     } else {
         vec = UIMAT_Row.row(idx);
@@ -115,10 +116,11 @@ double CF::predict_ui_rating(const std::string &ui, int idx, const IDX_SCORE_VEC
     }
 
     if(k==0) {
-        if(ret_avg)
+        if(ret_avg) {
             return 5.5;
+        }
         return 0.0;
-    };
+    }
 
     return ws/k;
 }
@@ -135,7 +137,7 @@ IDX_SCORE_VEC CF::recommended_items_for_user(int user_id, int k, double simi_th,
     double rating;
     for(int i=0; i<tgt_row.size(); ++i) {
         if(tgt_row.coeff(i) == 0) {
-            rating = predict_ui_rating("user", i, sorted_user_simi, false);
+            rating = predict_ui_rating<SP_ROW>(i, sorted_user_simi, false);
             if(rating != 0)
                 weighted_sum.coeffRef(i) = rating;
         }
@@ -173,7 +175,7 @@ IDX_SCORE_VEC CF::recommended_users_for_item(int item_id, int k, double simi_th,
     double rating;
     for(int i=0; i<tgt_col.size(); ++i) {
         if(tgt_col.coeff(i) == 0) {
-            rating = predict_ui_rating("item", i, sorted_item_simi, false);
+            rating = predict_ui_rating<SP_COL>(i, sorted_item_simi, false);
             if(rating != 0)
                 weighted_sum.coeffRef(i) = rating;
         }
@@ -198,35 +200,51 @@ IDX_SCORE_VEC CF::recommended_users_for_item(int item_id, int k, double simi_th,
     return userID_score;
 }
 
-//void CF::test_rmse(const std::string & method) {
-//    long u_size = (long)((float)UIMAT_Row.rows() * test_u_size);
-//    long i_size = (long)((float)UIMAT_Row.cols() * test_i_size);
-//    SP_ROW test_Row_Block = UIMAT_Row.bottomRightCorner(u_size, i_size);
-//    SP_COL test_Col_Block = UIMAT_Col.bottomRightCorner(u_size, i_size);
-//    long u_start = UIMAT_Row.rows() - u_size;
-//    long i_start = UIMAT_Row.cols() - i_size;
-//
-//    IDX_SCORE_VEC simi;  SV ws, test_Row_Block_row;
-//    double squared_error = 0.0, rmse;
-//    for(long u=u_start; u<UIMAT_Row.rows(); ++u) {
-//        if(!UIMAT_Row.row(u).nonZeros()) continue;
-//        std::cout << u << std::endl;
-//        simi = calculate_simi("user", (int)u, 0.01, (int)i_start, (int)u_start);
-//        ws = calculate_weighted_sum("user", simi);
-//        test_Row_Block_row = test_Row_Block.row(u-u_start);
-//        for(int i=0; i<test_Row_Block_row.nonZeros(); ++i) {
-//            int idx = *(test_Row_Block_row.innerIndexPtr()+i);
-//            std::cout << " " << idx << " " << *(test_Row_Block_row.valuePtr() + i) << " " << ws.coeff(idx + i_start) <<std::endl;
-//            if(ws.coeff(idx + i_start) != 0) {
-//                std::cout << "y_true : " << *(test_Row_Block_row.valuePtr() + i) << std::endl;
-//                std::cout << "y_pred : " << ws.coeff(idx + i_start) << std::endl;
-//                std::cout << "(a-b)2 : " << pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2) << std::endl;
-//                squared_error += pow(*(test_Row_Block_row.valuePtr() + i) - ws.coeff(idx + i_start), 2);
-//                std::cout << "(a-b)2 : " << squared_error << std::endl;
-//                exit(0);
-//            }
-//        }
-//    }
-//    rmse = sqrt(squared_error/(double)test_Row_Block.nonZeros());
-//    std::cout << "rmse : " << rmse << std::endl;
-//}
+template<typename SP>
+double CF::calculate_rmse(int k, double simi_th, double test_u_size, double test_i_size) {
+    long u_size = (long)((double)UIMAT_Col.rows() * test_u_size);
+    long i_size = (long)((double)UIMAT_Col.cols() * test_i_size);
+    SP block;
+    long major_start, major_bound, minor_start;
+    if(block.IsRowMajor) {
+        block = UIMAT_Row.bottomRightCorner(u_size, i_size);
+        major_start = UIMAT_Row.rows() - u_size;
+        major_bound = UIMAT_Row.rows();
+        minor_start = UIMAT_Row.cols() - i_size;
+    } else {
+        block = UIMAT_Col.bottomRightCorner(u_size, i_size);
+        major_start = UIMAT_Col.cols() - i_size;
+        major_bound = UIMAT_Col.cols();
+        minor_start = UIMAT_Col.rows() - u_size;
+    }
+    std::cout << block.nonZeros() << std::endl;
+    SV block_vec;  double se = 0.0, rating;
+    IDX_SCORE_VEC simi;
+    for(long i=major_start; i<major_bound; ++i) {
+        if(block.IsRowMajor) {
+            block_vec = block.row(i - major_start);
+            simi = KNN<SP>::naive_kNearest(UIMAT_Row, i, k, simi_th, minor_start);
+        }
+        else {
+            block_vec = block.col(i - major_start);
+            simi = KNN<SP>::naive_kNearest(UIMAT_Col, i, k, simi_th, minor_start);
+        }
+
+        for(long j=0; j<block_vec.nonZeros(); ++j) {
+            long idx = *(block_vec.innerIndexPtr()+j);
+            double val = *(block_vec.valuePtr()+j);
+            rating = predict_ui_rating<SP>(idx+minor_start, simi, true);
+            se += pow(rating - val, 2);
+        }
+    }
+    std::cout << se << " / " << (double)block.nonZeros() << std::endl;
+    double rmse = sqrt(se/(double)block.nonZeros());
+
+    return rmse;
+}
+
+template double CF::predict_ui_rating<SP_COL>(int idx, const IDX_SCORE_VEC &idx_score, bool ret_avg);
+template double CF::predict_ui_rating<SP_ROW>(int idx, const IDX_SCORE_VEC &idx_score, bool ret_avg);
+
+template double CF::calculate_rmse<SP_COL>(int k, double simi_th, double test_u_size, double test_i_size);
+template double CF::calculate_rmse<SP_ROW>(int k, double simi_th, double test_u_size, double test_i_size);

@@ -11,9 +11,9 @@ template<typename SP>
 class KNN {
 
 private:
-    static IDX_SCORE_VEC calculate_simi(const SP & sp_mat, int idx, double simi_th, int vec_test_start=-1, int mat_test_start=-1);
+    static IDX_SCORE_VEC calculate_simi(const SP & sp_mat, int idx, double simi_th, int tgt_test_start=-1);
 
 public:
-    static IDX_SCORE_VEC naive_kNearest(const SP & sp_mat, int idx, int k, double simi_th);
+    static IDX_SCORE_VEC naive_kNearest(const SP & sp_mat, int idx, int k, double simi_th, int tgt_test_start=-1);
 
 };

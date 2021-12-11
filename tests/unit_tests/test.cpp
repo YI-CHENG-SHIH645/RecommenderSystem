@@ -124,3 +124,14 @@ TEST(CFTest, recommended_users_for_item) {
     EXPECT_EQ(result[2].first, 6);
     EXPECT_NEAR(result[2].second, 6.59696, 1e-5);
 }
+
+TEST(CFTest, test_rmse) {
+    auto mat = make_matrix<SP_ROW>();
+    auto result = KNN<SP_ROW>::naive_kNearest(mat, 6, 2, 0.3, 6);
+    CF cf(mat);
+    double rmse = cf.calculate_rmse<SP_ROW>(6, 0.3, 0.3, 0.3);
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 0.735627, 1e-6);
+    EXPECT_NEAR(rmse, 3.39350, 1e-5);
+}
