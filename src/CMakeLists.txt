@@ -2,6 +2,7 @@ project(${CMAKE_PROJECT_NAME}_lib)
 
 set(HEADER_FILES
         StopWatch.h
+        InputReader.h
         CF.h
         KNN.h
 )
