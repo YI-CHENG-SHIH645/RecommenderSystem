@@ -1,7 +1,8 @@
 #include <iostream>
 #include "KNN.h"
 
-auto comp_fn = [](const auto & a, const auto & b){ return a.second == b.second ? a.first < b.first : a.second > b.second;};
+auto comp_fn  = [](const auto & a, const auto & b){ return a.second == b.second ? a.first < b.first : a.second > b.second;};
+auto comp_idx = [](const auto & a, const auto & b){ return a.first < b.first; };
 
 template<typename SP>
 IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th, int tgt_test_start) {
@@ -31,7 +32,7 @@ IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th
         if(top != 0) {
             double sqrt_bleft = sqrt(vec.cwiseProduct(vec).sum());
             double s = top / (sqrt_bleft * sqrt_bright);
-            if(s >= simi_th)
+            if(s > simi_th)
                 simi.emplace_back(j, s);
         }
     }
@@ -44,7 +45,11 @@ IDX_SCORE_VEC KNN<SP>::naive_kNearest(const SP & sp_mat, int idx, int k, double 
 
     IDX_SCORE_VEC simi = calculate_simi(sp_mat, idx, simi_th, tgt_test_start);
     std::sort(simi.begin(), simi.end(), comp_fn);
-    simi.resize(std::min(k, (int)simi.size()));
+    if(k==-1)
+        simi.resize((int)simi.size());
+    else
+        simi.resize(std::min(k, (int)simi.size()));
+    std::sort(simi.begin(), simi.end(), comp_idx);
 
     return simi;
 }

@@ -70,11 +70,11 @@ TEST(CFTest, naive_kNearest_user) {
     IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 4);
-    EXPECT_NEAR( result[0].second, 0.812587, 1e-6);
+    EXPECT_EQ(result[1].first, 4);
+    EXPECT_NEAR( result[1].second, 0.812587, 1e-6);
 
-    EXPECT_EQ(result[1].first, 2);
-    EXPECT_NEAR(result[1].second, 0.784340, 1e-6);
+    EXPECT_EQ(result[0].first, 2);
+    EXPECT_NEAR(result[0].second, 0.784340, 1e-6);
 
     EXPECT_EQ(result[2].first, 5);
     EXPECT_NEAR(result[2].second, 0.683999, 1e-6);
@@ -100,14 +100,14 @@ TEST(CFTest, naive_kNearest_item) {
     IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 5);
-    EXPECT_NEAR( result[0].second, 0.704448, 1e-6);
+    EXPECT_EQ(result[2].first, 5);
+    EXPECT_NEAR( result[2].second, 0.704448, 1e-6);
 
-    EXPECT_EQ(result[1].first, 1);
-    EXPECT_NEAR(result[1].second, 0.576002, 1e-6);
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 0.576002, 1e-6);
 
-    EXPECT_EQ(result[2].first, 3);
-    EXPECT_NEAR(result[2].second, 0.551927, 1e-6);
+    EXPECT_EQ(result[1].first, 3);
+    EXPECT_NEAR(result[1].second, 0.551927, 1e-6);
 }
 
 TEST(CFTest, recommended_users_for_item) {
