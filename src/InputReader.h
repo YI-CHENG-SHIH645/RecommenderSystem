@@ -67,7 +67,7 @@ public:
                     user_to_idx[user] = num_user++;
                 if (!item_to_idx.count(item))
                     item_to_idx[item] = num_item++;
-                triplets.emplace_back(Eigen::Triplet<double>(user_to_idx[user], item_to_idx[item], std::stoi(rating)));
+                triplets.emplace_back(Eigen::Triplet<double>(user_to_idx[user], item_to_idx[item], std::stoi(rating)+1));
             }
             else
                 test_data.emplace_back(std::make_tuple(user, item, std::stoi(rating)));
@@ -120,8 +120,8 @@ public:
         std::cout << "# items (cols m) : " << train_mat_col.cols() << " -> " << valid_cols.size() << std::endl;
     }
 
-    const NAME2IDX & u2i() { return user_to_idx; }
-    const NAME2IDX & i2i() { return item_to_idx; }
+    NAME2IDX & u2i() { return user_to_idx; }
+    NAME2IDX & i2i() { return item_to_idx; }
     const SP_COL & train_data_col() { return train_mat_col; }
     const SP_ROW & train_data_row() { return train_mat_row; }
     const VEC_TUPLE & test_data_vec() { return test_data; }

@@ -5,7 +5,7 @@ auto comp_fn  = [](const auto & a, const auto & b){ return a.second == b.second 
 auto comp_idx = [](const auto & a, const auto & b){ return a.first < b.first; };
 
 template<typename SP>
-IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th, int tgt_test_start) {
+IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th) {
     // return vec of non-zero simi -> idx : simi
     IDX_SCORE_VEC simi;
     SV vec, tgt;
@@ -14,13 +14,6 @@ IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th
         tgt = sp_mat.row(idx);
     } else {
         tgt = sp_mat.col(idx);
-    }
-
-    if(tgt_test_start > -1) {
-        for(int i=tgt_test_start; i<tgt.size(); ++i) {
-            if(tgt.coeffRef(i) != 0)
-                tgt.coeffRef(i) = 0;
-        }
     }
 
     double sqrt_bright = sqrt(tgt.cwiseProduct(tgt).sum());
@@ -41,9 +34,9 @@ IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, double simi_th
 }
 
 template<typename SP>
-IDX_SCORE_VEC KNN<SP>::naive_kNearest(const SP & sp_mat, int idx, int k, double simi_th, int tgt_test_start) {
+IDX_SCORE_VEC KNN<SP>::naive_kNearest(const SP & sp_mat, int idx, int k, double simi_th) {
 
-    IDX_SCORE_VEC simi = calculate_simi(sp_mat, idx, simi_th, tgt_test_start);
+    IDX_SCORE_VEC simi = calculate_simi(sp_mat, idx, simi_th);
     std::sort(simi.begin(), simi.end(), comp_fn);
     if(k==-1)
         simi.resize((int)simi.size());

@@ -84,7 +84,7 @@ TEST(CFTest, naive_kNearest_user) {
 TEST(CFTest, recommended_items_for_user) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_items_for_user(0, 3, 0.5);
+    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[0].first, 6);
@@ -115,7 +115,7 @@ TEST(CFTest, naive_kNearest_item) {
 TEST(CFTest, recommended_users_for_item) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_users_for_item(0, 3, 0.5);
+    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[0].first, 1);
@@ -127,15 +127,3 @@ TEST(CFTest, recommended_users_for_item) {
     EXPECT_EQ(result[2].first, 6);
     EXPECT_NEAR(result[2].second, 6.59696, 1e-5);
 }
-
-//TEST(CFTest, test_rmse) {
-//    auto mat = make_matrix<SP_COL>();
-//    auto result = KNN<SP_ROW>::naive_kNearest(mat, 6, 2, 0.3, 6);
-//    auto tmp = InputReader(make_matrix<SP_COL>());
-//    CF cf(tmp);
-//    double rmse = cf.test_rmse<SP_ROW>(6, 0.3, 0.3, 0.3);
-//    EXPECT_EQ(result.size(), 2);
-//    EXPECT_EQ(result[0].first, 1);
-//    EXPECT_NEAR(result[0].second, 0.735627, 1e-6);
-//    EXPECT_NEAR(rmse, 3.39350, 1e-5);
-//}

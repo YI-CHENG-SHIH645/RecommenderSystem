@@ -20,6 +20,6 @@ public:
     template<typename SP>
     double test_rmse(int k, double simi_th);
 
-    IDX_SCORE_VEC recommended_items_for_user(int user_id, int k=20, double simi_th=0, int n=10);
-    IDX_SCORE_VEC recommended_users_for_item(int item_id, int k=20, double simi_th=0, int n=10);
+    IDX_SCORE_VEC recommended_items_for_user(const std::string & user_id, int k=20, double simi_th=0, int n=10);
+    IDX_SCORE_VEC recommended_users_for_item(const std::string & item_id, int k=20, double simi_th=0, int n=10);
 };
