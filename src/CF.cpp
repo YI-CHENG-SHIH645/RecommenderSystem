@@ -30,21 +30,31 @@ double CF::predict_ui_rating(int idx, const IDX_SCORE_VEC & idx_score) const {
     return ws/k;
 }
 
-IDX_SCORE_VEC CF::recommended_items_for_user(const std::string & user_id, int k, double simi_th, int n) {
-
+IDX_SCORE_VEC CF::recommended_items_for_user(const std::string & user_id,
+                                             const std::string & based,
+                                             int k, double simi_th, int n) {
     StopWatch sw; double elapsed;
     int user = input.u2i()[user_id];
     auto UIMAT_Row = input.train_data_row();
-    auto valid_cols = input.valid_col_idx();
+    auto UIMAT_Col = input.train_data_col();
+    auto valid_idx = based == "user-based" ? input.valid_col_idx() : input.valid_row_idx();
     std::cout << "calculate weighted sum of top k item vectors ... ";  sw.lap();
-    IDX_SCORE_VEC sorted_user_simi = KNN<SP_ROW>::naive_kNearest(UIMAT_Row, user, k, simi_th);
+    IDX_SCORE_VEC sorted_simi;
+    if(based == "user-based") {
+        sorted_simi = KNN<SP_ROW>::naive_kNearest(UIMAT_Row, user, -1, k, simi_th);
+    }
     SV weighted_sum(UIMAT_Row.cols());
     SV tgt_row = UIMAT_Row.row(user);
     double rating;
     for(int i=0; i<tgt_row.size(); ++i) {
-        if(tgt_row.coeff(i) == 0 && (valid_cols.count(i) || !input.filtered())) {
-            rating = predict_ui_rating<SP_ROW>(i, sorted_user_simi);
-            if(rating == std::numeric_limits<double>::min())
+        if(tgt_row.coeff(i) == 0 && (valid_idx.count(i) || !input.filtered())) {
+            if(based == "user-based") {
+                rating = predict_ui_rating<SP_ROW>(i, sorted_simi);
+            } else {
+                sorted_simi = KNN<SP_COL>::naive_kNearest(UIMAT_Col, i, user, k, simi_th);
+                rating = predict_ui_rating<SP_COL>(user, sorted_simi);
+            }
+            if(rating == std::numeric_limits<double>::max())
                 continue;
             if(rating != 0)
                 weighted_sum.coeffRef(i) = rating;
@@ -69,22 +79,32 @@ IDX_SCORE_VEC CF::recommended_items_for_user(const std::string & user_id, int k,
     return itemID_score;
 }
 
-IDX_SCORE_VEC CF::recommended_users_for_item(const std::string & item_id, int k, double simi_th, int n) {
+IDX_SCORE_VEC CF::recommended_users_for_item(const std::string & item_id,
+                                             const std::string & based,
+                                             int k, double simi_th, int n) {
 
     StopWatch sw; double elapsed;
     int item = input.i2i()[item_id];
     auto UIMAT_Col = input.train_data_col();
-    auto valid_rows = input.valid_row_idx();
+    auto UIMAT_Row = input.train_data_row();
+    auto valid_idx = based == "user-based" ? input.valid_col_idx() : input.valid_row_idx();
     std::cout << "calculate weighted sum of top k user vectors ... ";  sw.lap();
-    IDX_SCORE_VEC sorted_item_simi = KNN<SP_COL>::naive_kNearest(UIMAT_Col, item, k, simi_th);
-//    SV weighted_sum = calculate_weighted_sum("item", sorted_item_simi);
+    IDX_SCORE_VEC sorted_simi;
+    if(based == "item-based") {
+        sorted_simi = KNN<SP_COL>::naive_kNearest(UIMAT_Col, item, -1, k, simi_th);
+    }
     SV weighted_sum(UIMAT_Col.rows());
     SV tgt_col = UIMAT_Col.col(item);
     double rating;
     for(int i=0; i<tgt_col.size(); ++i) {
-        if(tgt_col.coeff(i) == 0 && (valid_rows.count(i) || !input.filtered())) {
-            rating = predict_ui_rating<SP_COL>(i, sorted_item_simi);
-            if(rating == std::numeric_limits<double>::min())
+        if(tgt_col.coeff(i) == 0 && (valid_idx.count(i) || !input.filtered())) {
+            if(based == "item-based") {
+                rating = predict_ui_rating<SP_COL>(i, sorted_simi);
+            } else {
+                sorted_simi = KNN<SP_ROW>::naive_kNearest(UIMAT_Row, i, item, k, simi_th);
+                rating = predict_ui_rating<SP_ROW>(item, sorted_simi);
+            }
+            if(rating == std::numeric_limits<double>::max())
                 continue;
             if(rating != 0)
                 weighted_sum.coeffRef(i) = rating;
@@ -111,7 +131,7 @@ IDX_SCORE_VEC CF::recommended_users_for_item(const std::string & item_id, int k,
 
 template<typename SP>
 double CF::test_rmse(int k, double simi_th) {
-    int idx, another_idx, cur_idx = -1, avg_count = 0;
+    int idx, another_idx, avg_count = 0;
     std::string reader, book;
     double rating, pred_rating, se = 0.0, baseline_se = 0.0;
     IDX_SCORE_VEC simi;
@@ -136,10 +156,9 @@ double CF::test_rmse(int k, double simi_th) {
         UIMAT = input.train_data_col();
     }
     std::cout << "test rmse sorting done" << std::endl;
-    int count = 0;
+    StopWatch sw; double elapsed;
+    std::cout << "test time ... ";  sw.lap();
     for(auto & r : test_data) {
-        count++;
-        if(count % 5000 == 0) std::cout << count << std::endl;
         std::tie(reader, book, rating) = r;
         if(SP::IsRowMajor) {
             idx = reader_to_idx.count(reader) ? reader_to_idx[reader] : -1;
@@ -152,15 +171,8 @@ double CF::test_rmse(int k, double simi_th) {
         if(idx == -1 || another_idx == -1) {
             pred_rating = 5.5;
             ++avg_count;
-        } else if(idx != cur_idx) {
-            cur_idx = idx;
-            simi = KNN<SP>::naive_kNearest(UIMAT, idx, k, simi_th);
-            pred_rating = predict_ui_rating<SP>(another_idx, simi);
-            if(pred_rating == std::numeric_limits<double>::max()) {
-                pred_rating = 5.5;
-                ++avg_count;
-            }
         } else {
+            simi = KNN<SP>::naive_kNearest(UIMAT, idx, another_idx, k, simi_th);
             pred_rating = predict_ui_rating<SP>(another_idx, simi);
             if(pred_rating == std::numeric_limits<double>::max()) {
                 pred_rating = 5.5;
@@ -171,6 +183,7 @@ double CF::test_rmse(int k, double simi_th) {
         baseline_se += pow(rating-5.5, 2);
     }
     double rmse = sqrt(se/(double)test_data.size());
+    elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
     std::cout << "avg ratio : " << avg_count/(double)input.test_data_vec().size() << std::endl;
     std::cout << "rmse : " << rmse << std::endl;
     std::cout << "baseline rmse : " << sqrt(baseline_se/(double)test_data.size()) << std::endl;

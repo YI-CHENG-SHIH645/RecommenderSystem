@@ -18,7 +18,7 @@ int main() {
     input.parse("train", ";", true);
     input.parse("test", ";", true);
     CF cf(input);
-//    auto items = cf.recommended_items_for_user("8", 20, 0, 10);
+    auto items = cf.recommended_items_for_user("8", "item-based", -1, 0, 10);
 //    auto users = cf.recommended_users_for_item("88740", 300);
-    cf.test_rmse<SP_COL>(-1, 0);
+//    cf.test_rmse<SP_COL>(-1, 0);
 }

@@ -68,7 +68,13 @@ SP make_matrix() {
 
 TEST(CFTest, naive_kNearest_user) {
     auto sp_mat = make_matrix<SP_ROW>();
-    IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, 3, 0.5);
+    for(int i=0; i<sp_mat.rows(); ++i) {
+        for(int j=0; j<sp_mat.cols(); ++j) {
+            std::cout << std::setw(3) << sp_mat.coeff(i, j);
+        }
+        std::cout << std::endl;
+    }
+    IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, -1, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[1].first, 4);
@@ -84,7 +90,7 @@ TEST(CFTest, naive_kNearest_user) {
 TEST(CFTest, recommended_items_for_user) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", 3, 0.5);
+    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", "user-based", 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[0].first, 6);
@@ -99,7 +105,7 @@ TEST(CFTest, recommended_items_for_user) {
 
 TEST(CFTest, naive_kNearest_item) {
     auto sp_mat = make_matrix<SP_COL>();
-    IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, 3, 0.5);
+    IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, -1, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[2].first, 5);
@@ -115,7 +121,7 @@ TEST(CFTest, naive_kNearest_item) {
 TEST(CFTest, recommended_users_for_item) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", 3, 0.5);
+    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", "item-based", 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
     EXPECT_EQ(result[0].first, 1);
