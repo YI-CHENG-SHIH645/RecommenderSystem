@@ -66,14 +66,8 @@ SP make_matrix() {
     return sp_mat;
 }
 
-TEST(CFTest, naive_kNearest_user) {
+TEST(KNNTest, KNN_user0_all) {
     auto sp_mat = make_matrix<SP_ROW>();
-    for(int i=0; i<sp_mat.rows(); ++i) {
-        for(int j=0; j<sp_mat.cols(); ++j) {
-            std::cout << std::setw(3) << sp_mat.coeff(i, j);
-        }
-        std::cout << std::endl;
-    }
     IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, -1, 3, 0.5);
     EXPECT_EQ(result.size(), 3);
 
@@ -87,7 +81,52 @@ TEST(CFTest, naive_kNearest_user) {
     EXPECT_NEAR(result[2].second, 0.683999, 1e-6);
 }
 
-TEST(CFTest, recommended_items_for_user) {
+TEST(KNNTest, KNN_user0_nonZero) {
+    auto sp_mat = make_matrix<SP_ROW>();
+    IDX_SCORE_VEC result = KNN<SP_ROW>::naive_kNearest(sp_mat, 0, 3, -1, 0.3);
+    EXPECT_EQ(result.size(), 4);
+
+    EXPECT_EQ(result[1].first, 4);
+    EXPECT_NEAR( result[1].second, 0.812587, 1e-6);
+
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 0.567777, 1e-6);
+
+    EXPECT_EQ(result[2].first, 6);
+    EXPECT_NEAR(result[2].second, 0.534980, 1e-6);
+}
+
+TEST(KNNTest, KNN_item0_all) {
+    auto sp_mat = make_matrix<SP_COL>();
+    IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, -1, 3, 0.5);
+    EXPECT_EQ(result.size(), 3);
+
+    EXPECT_EQ(result[2].first, 5);
+    EXPECT_NEAR( result[2].second, 0.704448, 1e-6);
+
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 0.576002, 1e-6);
+
+    EXPECT_EQ(result[1].first, 3);
+    EXPECT_NEAR(result[1].second, 0.551927, 1e-6);
+}
+
+TEST(KNNTest, KNN_item0_nonZero) {
+    auto sp_mat = make_matrix<SP_COL>();
+    IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, 5, 3, 0.5);
+    EXPECT_EQ(result.size(), 3);
+
+    EXPECT_EQ(result[2].first, 5);
+    EXPECT_NEAR( result[2].second, 0.704448, 1e-6);
+
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 0.576002, 1e-6);
+
+    EXPECT_EQ(result[1].first, 4);
+    EXPECT_NEAR(result[1].second, 0.526562, 1e-6);
+}
+
+TEST(CFTest, recommended_items_for_user_user_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
     IDX_SCORE_VEC result = cf.recommended_items_for_user("0", "user-based", 3, 0.5);
@@ -103,22 +142,23 @@ TEST(CFTest, recommended_items_for_user) {
     EXPECT_NEAR(result[2].second, 2, 1e-5);
 }
 
-TEST(CFTest, naive_kNearest_item) {
-    auto sp_mat = make_matrix<SP_COL>();
-    IDX_SCORE_VEC result = KNN<SP_COL>::naive_kNearest(sp_mat, 0, -1, 3, 0.5);
+TEST(CFTest, recommended_items_for_user_item_based) {
+    auto tmp = InputReader(make_matrix<SP_COL>());
+    CF cf(tmp);
+    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", "item-based", -1, 0.5);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[2].first, 5);
-    EXPECT_NEAR( result[2].second, 0.704448, 1e-6);
+    EXPECT_EQ(result[0].first, 6);
+    EXPECT_NEAR(result[0].second, 6.38621, 1e-5);
 
-    EXPECT_EQ(result[0].first, 1);
-    EXPECT_NEAR(result[0].second, 0.576002, 1e-6);
+    EXPECT_EQ(result[1].first, 4);
+    EXPECT_NEAR(result[1].second, 5.67794, 1e-5);
 
-    EXPECT_EQ(result[1].first, 3);
-    EXPECT_NEAR(result[1].second, 0.551927, 1e-6);
+    EXPECT_EQ(result[2].first, 2);
+    EXPECT_NEAR(result[2].second, 2.38576, 1e-5);
 }
 
-TEST(CFTest, recommended_users_for_item) {
+TEST(CFTest, recommended_users_for_item_item_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
     IDX_SCORE_VEC result = cf.recommended_users_for_item("0", "item-based", 3, 0.5);
@@ -132,4 +172,20 @@ TEST(CFTest, recommended_users_for_item) {
 
     EXPECT_EQ(result[2].first, 6);
     EXPECT_NEAR(result[2].second, 6.59696, 1e-5);
+}
+
+TEST(CFTest, recommended_users_for_item_user_based) {
+    auto tmp = InputReader(make_matrix<SP_COL>());
+    CF cf(tmp);
+    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", "user-based", -1, 0.5);
+    EXPECT_EQ(result.size(), 3);
+
+    EXPECT_EQ(result[0].first, 1);
+    EXPECT_NEAR(result[0].second, 8.11169, 1e-5);
+
+    EXPECT_EQ(result[1].first, 6);
+    EXPECT_NEAR(result[1].second, 7.35234, 1e-5);
+
+    EXPECT_EQ(result[2].first, 5);
+    EXPECT_NEAR(result[2].second, 6.97994, 1e-5);
 }

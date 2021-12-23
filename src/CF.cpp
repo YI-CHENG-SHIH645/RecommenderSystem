@@ -130,7 +130,7 @@ IDX_SCORE_VEC CF::recommended_users_for_item(const std::string & item_id,
 }
 
 template<typename SP>
-double CF::test_rmse(int k, double simi_th) {
+double CF::test_rmse(double avg_value, int k, double simi_th) {
     int idx, another_idx, avg_count = 0;
     std::string reader, book;
     double rating, pred_rating, se = 0.0, baseline_se = 0.0;
@@ -169,18 +169,18 @@ double CF::test_rmse(int k, double simi_th) {
         }
 
         if(idx == -1 || another_idx == -1) {
-            pred_rating = 5.5;
+            pred_rating = avg_value;
             ++avg_count;
         } else {
             simi = KNN<SP>::naive_kNearest(UIMAT, idx, another_idx, k, simi_th);
             pred_rating = predict_ui_rating<SP>(another_idx, simi);
             if(pred_rating == std::numeric_limits<double>::max()) {
-                pred_rating = 5.5;
+                pred_rating = avg_value;
                 ++avg_count;
             }
         }
         se += pow(rating-pred_rating, 2);
-        baseline_se += pow(rating-5.5, 2);
+        baseline_se += pow(rating-avg_value, 2);
     }
     double rmse = sqrt(se/(double)test_data.size());
     elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
@@ -194,5 +194,5 @@ double CF::test_rmse(int k, double simi_th) {
 template double CF::predict_ui_rating<SP_COL>(int idx, const IDX_SCORE_VEC &idx_score) const;
 template double CF::predict_ui_rating<SP_ROW>(int idx, const IDX_SCORE_VEC &idx_score) const;
 
-template double CF::test_rmse<SP_COL>(int k, double simi_th);
-template double CF::test_rmse<SP_ROW>(int k, double simi_th);
+template double CF::test_rmse<SP_COL>(double avg_value, int k, double simi_th);
+template double CF::test_rmse<SP_ROW>(double avg_value, int k, double simi_th);
