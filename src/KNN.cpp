@@ -38,7 +38,7 @@ IDX_SCORE_VEC KNN<SP>::calculate_simi(const SP & sp_mat, int idx, int another_id
     } else {
         for(int j=0; j<another_tgt.nonZeros(); ++j) {
             int k = *(another_tgt.innerIndexPtr()+j);
-            if(k == idx) continue;
+            if (k == idx) continue;
             if (sp_mat.IsRowMajor) vec = sp_mat.row(k);
             else vec = sp_mat.col(k);
             double top = tgt.cwiseProduct(vec).sum();

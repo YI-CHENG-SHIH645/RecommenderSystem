@@ -41,7 +41,7 @@ private:
         return fin;
     }
 public:
-    explicit InputReader(std::string  file_name, std::string  test_file_name)
+    explicit InputReader(std::string file_name, std::string test_file_name)
     : train_file_name(std::move(file_name)), test_file_name(std::move(test_file_name)) {}
 
     explicit InputReader(const SP_COL & mat): train_mat_col(mat), train_mat_row(SP_ROW(mat)){}

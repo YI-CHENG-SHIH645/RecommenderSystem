@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCE_FILES main.cpp)
 add_compile_options(-D NDEBUG)
 add_executable(${CMAKE_PROJECT_NAME}_run ${SOURCE_FILES})
+find_package(pybind11 REQUIRED)
+pybind11_add_module(recommender_system create_so.cpp)
 
 include_directories(src)
 include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include)
@@ -15,6 +17,7 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}_run ${CMAKE_PROJECT_NAME}_lib)
+target_link_libraries(recommender_system PRIVATE ${CMAKE_PROJECT_NAME}_lib)
 
 # Doxygen Build
 option(BUILD_DOC "Build Documentation" ON)

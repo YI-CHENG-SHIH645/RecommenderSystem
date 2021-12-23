@@ -82,7 +82,6 @@ IDX_SCORE_VEC CF::recommended_items_for_user(const std::string & user_id,
 IDX_SCORE_VEC CF::recommended_users_for_item(const std::string & item_id,
                                              const std::string & based,
                                              int k, double simi_th, int n) {
-
     StopWatch sw; double elapsed;
     int item = input.i2i()[item_id];
     auto UIMAT_Col = input.train_data_col();
@@ -184,11 +183,19 @@ double CF::test_rmse(double avg_value, int k, double simi_th) {
     }
     double rmse = sqrt(se/(double)test_data.size());
     elapsed = sw.lap(); std::cout << elapsed << " sec" << std::endl;
-    std::cout << "avg ratio : " << avg_count/(double)input.test_data_vec().size() << std::endl;
+    std::cout << "avg ratio : " << avg_count/(double)test_data.size() << std::endl;
     std::cout << "rmse : " << rmse << std::endl;
     std::cout << "baseline rmse : " << sqrt(baseline_se/(double)test_data.size()) << std::endl;
 
     return rmse;
+}
+
+IDX_SCORE_VEC CF::recommend(const std::string & target, const std::string & id,
+                            const std::string & based, int k, double simi_th, int n) {
+    if(target == "user")
+        return recommended_items_for_user(id, based, k, simi_th, n);
+    else
+        return recommended_users_for_item(id, based, k, simi_th, n);
 }
 
 template double CF::predict_ui_rating<SP_COL>(int idx, const IDX_SCORE_VEC &idx_score) const;

@@ -1,0 +1,14 @@
+read as a vector of triplets (train) ... 3.65712 sec
+Init SP matrix (alloc & set) ... 0.193083 sec
+
+# readers (rows m) : 99225 , # books (cols n) : 320283
+# non zero element: 1034802
+density = 0.000603274
+
+read as a vector of triplets (test) ... 0.283088 sec
+length of test data : 114978
+test rmse sorting done
+test time ... 1627.85 sec
+avg ratio : 0.159874
+rmse : 3.82181
+baseline rmse : 4.67235
