@@ -9,6 +9,7 @@
 #include <utility>
 
 typedef std::unordered_map<std::string, int> NAME2IDX;
+typedef std::unordered_map<int, std::string> IDX2NAME;
 typedef std::vector<std::tuple<std::string, std::string, double>> VEC_TUPLE;
 
 class InputReader {
@@ -16,6 +17,7 @@ class InputReader {
 private:
     std::string train_file_name, test_file_name;
     NAME2IDX user_to_idx, item_to_idx;
+    IDX2NAME idx_to_user, idx_to_item;
     SP_COL train_mat_col;
     SP_ROW train_mat_row;
     VEC_TUPLE test_data;
@@ -44,13 +46,23 @@ public:
     explicit InputReader(std::string file_name, std::string test_file_name)
     : train_file_name(std::move(file_name)), test_file_name(std::move(test_file_name)) {}
 
-    explicit InputReader(const SP_COL & mat): train_mat_col(mat), train_mat_row(SP_ROW(mat)){}
+    explicit InputReader(const SP_COL & mat): train_mat_col(mat), train_mat_row(SP_ROW(mat)){
+        for(int i=0; i<mat.cols(); ++i) {
+            item_to_idx[std::to_string(i)] = i;
+            idx_to_item[i] = std::to_string(i);
+        }
+        for(int i=0; i<mat.rows(); ++i) {
+            user_to_idx[std::to_string(i)] = i;
+            idx_to_user[i] = std::to_string(i);
+        }
+    }
 
-    void parse(const std::string & mode, const char* dlm, bool skip_header) {
+    void parse(const std::string & mode, const char* dlm, bool skip_header, bool plus1) {
         std::ifstream fin;
         if(mode == "train") open_train_file().swap(fin); else open_test_file().swap(fin);
         int num_user = 0, num_item = 0;
         std::string user, item, rating, line;
+        double numeric_rating;
         std::vector<Eigen::Triplet<double>> triplets;
         if(skip_header)
             std::getline(fin, line); // skip header
@@ -61,16 +73,20 @@ public:
             std::getline(l, user, *dlm); boost::replace_all(user, "\"", "");
             std::getline(l, item, *dlm); boost::replace_all(item, "\"", "");
             std::getline(l, rating, *dlm); boost::replace_all(rating, "\"", "");
-
+            numeric_rating = plus1 ? std::stod(rating)+1 : std::stod(rating);
             if(mode == "train") {
-                if (!user_to_idx.count(user))
-                    user_to_idx[user] = num_user++;
-                if (!item_to_idx.count(item))
-                    item_to_idx[item] = num_item++;
-                triplets.emplace_back(Eigen::Triplet<double>(user_to_idx[user], item_to_idx[item], std::stoi(rating)+1));
+                if (!user_to_idx.count(user)) {
+                    user_to_idx[user] = num_user;
+                    idx_to_user[num_user++] = user;
+                }
+                if (!item_to_idx.count(item)) {
+                    item_to_idx[item] = num_item;
+                    idx_to_item[num_item++] = item;
+                }
+                triplets.emplace_back(Eigen::Triplet<double>(user_to_idx[user], item_to_idx[item], numeric_rating));
             }
             else
-                test_data.emplace_back(std::make_tuple(user, item, std::stoi(rating)));
+                test_data.emplace_back(std::make_tuple(user, item, numeric_rating));
         }
         elapsed = sw.lap();  std::cout << elapsed << " sec" << std::endl;
 
@@ -120,8 +136,10 @@ public:
         std::cout << "# items (cols m) : " << train_mat_col.cols() << " -> " << valid_cols.size() << std::endl;
     }
 
-    NAME2IDX & u2i() { return user_to_idx; }
-    NAME2IDX & i2i() { return item_to_idx; }
+    NAME2IDX & usr2idx() { return user_to_idx; }
+    NAME2IDX & item2idx() { return item_to_idx; }
+    IDX2NAME & idx2usr() { return idx_to_user; }
+    IDX2NAME & idx2item() { return idx_to_item; }
     const SP_COL & train_data_col() { return train_mat_col; }
     const SP_ROW & train_data_row() { return train_mat_row; }
     const VEC_TUPLE & test_data_vec() { return test_data; }

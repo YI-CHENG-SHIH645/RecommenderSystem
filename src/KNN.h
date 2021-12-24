@@ -6,6 +6,7 @@ typedef Eigen::SparseMatrix<double, Eigen::ColMajor> SP_COL;
 typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SP_ROW;
 typedef Eigen::SparseVector<double> SV;
 typedef std::vector<std::pair<int, double>> IDX_SCORE_VEC;
+typedef std::vector<std::pair<std::string, double>> ID_SCORE_VEC;
 
 template<typename SP>
 class KNN {

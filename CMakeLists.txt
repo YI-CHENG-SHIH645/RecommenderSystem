@@ -8,6 +8,7 @@ add_compile_options(-D NDEBUG)
 add_executable(${CMAKE_PROJECT_NAME}_run ${SOURCE_FILES})
 find_package(pybind11 REQUIRED)
 pybind11_add_module(recommender_system create_so.cpp)
+set_target_properties(recommender_system PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 
 include_directories(src)
 include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include)

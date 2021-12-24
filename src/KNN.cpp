@@ -1,7 +1,7 @@
 #include <iostream>
 #include "KNN.h"
 
-auto comp_fn  = [](const auto & a, const auto & b){ return a.second == b.second ? a.first < b.first : a.second > b.second;};
+auto comp_fn  = [](const auto & a, const auto & b){ return a.second > b.second; };
 auto comp_idx = [](const auto & a, const auto & b){ return a.first < b.first; };
 
 template<typename SP>

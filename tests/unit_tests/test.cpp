@@ -129,63 +129,63 @@ TEST(KNNTest, KNN_item0_nonZero) {
 TEST(CFTest, recommended_items_for_user_user_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", "user-based", 3, 0.5);
+    ID_SCORE_VEC result = cf.recommended_items_for_user("0", "user-based", 3, 0.5, 10, false);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 6);
+    EXPECT_EQ(result[0].first, "6");
     EXPECT_NEAR(result[0].second, 4.43809, 1e-5);
 
-    EXPECT_EQ(result[1].first, 4);
+    EXPECT_EQ(result[1].first, "4");
     EXPECT_NEAR(result[1].second, 2.95601, 1e-5);
 
-    EXPECT_EQ(result[2].first, 2);
+    EXPECT_EQ(result[2].first, "2");
     EXPECT_NEAR(result[2].second, 2, 1e-5);
 }
 
 TEST(CFTest, recommended_items_for_user_item_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_items_for_user("0", "item-based", -1, 0.5);
+    ID_SCORE_VEC result = cf.recommended_items_for_user("0", "item-based", -1, 0.5);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 6);
+    EXPECT_EQ(result[0].first, "6");
     EXPECT_NEAR(result[0].second, 6.38621, 1e-5);
 
-    EXPECT_EQ(result[1].first, 4);
+    EXPECT_EQ(result[1].first, "4");
     EXPECT_NEAR(result[1].second, 5.67794, 1e-5);
 
-    EXPECT_EQ(result[2].first, 2);
+    EXPECT_EQ(result[2].first, "2");
     EXPECT_NEAR(result[2].second, 2.38576, 1e-5);
 }
 
 TEST(CFTest, recommended_users_for_item_item_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", "item-based", 3, 0.5);
+    ID_SCORE_VEC result = cf.recommended_users_for_item("0", "item-based", 3, 0.5, 10, false);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 1);
+    EXPECT_EQ(result[0].first, "1");
     EXPECT_NEAR(result[0].second, 7.37131, 1e-5);
 
-    EXPECT_EQ(result[1].first, 5);
+    EXPECT_EQ(result[1].first, "5");
     EXPECT_NEAR(result[1].second, 7.30094, 1e-5);
 
-    EXPECT_EQ(result[2].first, 6);
+    EXPECT_EQ(result[2].first, "6");
     EXPECT_NEAR(result[2].second, 6.59696, 1e-5);
 }
 
 TEST(CFTest, recommended_users_for_item_user_based) {
     auto tmp = InputReader(make_matrix<SP_COL>());
     CF cf(tmp);
-    IDX_SCORE_VEC result = cf.recommended_users_for_item("0", "user-based", -1, 0.5);
+    ID_SCORE_VEC result = cf.recommended_users_for_item("0", "user-based", -1, 0.5);
     EXPECT_EQ(result.size(), 3);
 
-    EXPECT_EQ(result[0].first, 1);
+    EXPECT_EQ(result[0].first, "1");
     EXPECT_NEAR(result[0].second, 8.11169, 1e-5);
 
-    EXPECT_EQ(result[1].first, 6);
+    EXPECT_EQ(result[1].first, "6");
     EXPECT_NEAR(result[1].second, 7.35234, 1e-5);
 
-    EXPECT_EQ(result[2].first, 5);
+    EXPECT_EQ(result[2].first, "5");
     EXPECT_NEAR(result[2].second, 6.97994, 1e-5);
 }
